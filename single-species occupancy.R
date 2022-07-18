@@ -38,10 +38,9 @@ b2000 <- left_join(b2000, human_dog_df, by="site_name")%>%
   dplyr::filter(site_name %in% unique(detection_matrix$deer$site_name)) ##filter those for relevant for the analysis
 
 
-
 ##call occupancy covariates
-cov<- b1000 %>% select(-1, -BUFF_DIST, -SHAPE_Length, -ORIG_FID, -SHAPE_Area)
-cov <- as.data.frame(scale(cov))
+b1000<- b1000 %>% select(-1, -BUFF_DIST, -SHAPE_Length, -ORIG_FID, -SHAPE_Area)
+
 
 ##call detection covariate matrix here if using
 ##det_list <- list(season = det_covs)
@@ -50,13 +49,13 @@ cov <- as.data.frame(scale(cov))
 y <- detection_matrix$deer[ , 2:54]
 
 siteCovs_500 <- as.data.frame(b500)
-siteCovs_500 <- siteCovs_500[,2:28]
+siteCovs_500 <- siteCovs_500[,2:23]
 
 siteCovs_1000 <- as.data.frame(b1000)
-siteCovs_1000 <- siteCovs_500[,2:28]
+siteCovs_1000 <- siteCovs_500[,2:23]
 
 siteCovs_2000 <- as.data.frame(b2000)
-siteCovs_2000 <- siteCovs_500[,2:28]
+siteCovs_2000 <- siteCovs_500[,2:23]
 
 umf_deer_500 <- unmarkedFrameOccu(y = y, siteCovs = siteCovs_500)
 umf_deer_1000 <- unmarkedFrameOccu(y = y, siteCovs = siteCovs_1000)
@@ -69,7 +68,7 @@ coyote <- unmarkedFrameOccu(y = (detection_matrix$coyote%>%select(-1)),
 #obsCovs = det_list
 #mdata <- coyote
 ## in order to change deer model with buffer change swap mdata variable with umf_deer_500, umf_deer_1000, or umf_deer_2000
-mdata <- umf_deer_2000
+mdata <- umf_deer_1000
 
 
 ##single covariate comparison
