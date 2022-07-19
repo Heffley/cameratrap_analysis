@@ -4,11 +4,12 @@ library(dplyr)
 
 ###################START HERE IF WANTING TO USE DIRECTLY THE DETECTION MATRIX #############
 ###read directly the detection matrix RDS to avoid every step of this script up to here###
-detection_matrix  <- readRDS(gzcon(url("https://github.com/tgelmi-candusso/cameratrap_analysis/raw/main/detection_matrix_Scarborough.rds")))
+detection_matrix  <- readRDS(gzcon(url("https://github.com/tgelmi-candusso/cameratrap_analysis/raw/main/detection_matrix_revsites_15072022.rds")))
 
 #### COVARIATES ########
 
 ##GENERATE COVARIATE dataframes for the model , make sure to readapt the site_names AND add human/dog presence####
+urlfile100="https://raw.githubusercontent.com/tgelmi-candusso/cameratrap_analysis/main/cov_100.csv"
 urlfile500="https://raw.githubusercontent.com/tgelmi-candusso/cameratrap_analysis/main/cov_500.csv"
 urlfile1000="https://raw.githubusercontent.com/tgelmi-candusso/cameratrap_analysis/main/cov_1000.csv"
 urlfile2000="https://raw.githubusercontent.com/tgelmi-candusso/cameratrap_analysis/main/cov_2000.csv"
@@ -18,68 +19,87 @@ human_dog_df <- read.csv(urlfilehumans) %>%
   select(-1) %>% 
   select(site_name, total_freq_humans ,total_freq_dogs )
 
+b100 <- read_csv(urlfile100)%>%
+  mutate(site_name = gsub("_", "", site_name))%>%
+  mutate(site_name = gsub("TUW0", "TUW", site_name))
+b100 <- left_join(b100, human_dog_df, by="site_name")%>%
+  dplyr::filter(site_name %in% unique(detection_matrix$deer$site_name))%>% ##filter those for relevant for the analysis
+  mutate(total_freq_humans = ifelse(is.na(total_freq_humans), 0, total_freq_humans)) %>%
+  mutate(total_freq_dogs = ifelse(is.na(total_freq_dogs), 0, total_freq_dogs))
+
 b500 <- read_csv(urlfile500)%>%
   mutate(site_name = gsub("_", "", site_name))%>%
   mutate(site_name = gsub("TUW0", "TUW", site_name))
 b500 <- left_join(b500, human_dog_df, by="site_name")%>%
-  dplyr::filter(site_name %in% unique(detection_matrix$deer$site_name)) ##filter those for relevant for the analysis
+  dplyr::filter(site_name %in% unique(detection_matrix$deer$site_name))%>% ##filter those for relevant for the analysis
+  mutate(total_freq_humans = ifelse(is.na(total_freq_humans), 0, total_freq_humans)) %>%
+  mutate(total_freq_dogs = ifelse(is.na(total_freq_dogs), 0, total_freq_dogs))
 
 b1000 <- read_csv(urlfile1000)%>%
   mutate(site_name = gsub("_", "", site_name))%>%
   mutate(site_name = gsub("TUW0", "TUW", site_name))
 b1000 <- left_join(b1000, human_dog_df, by="site_name")%>%
-  dplyr::filter(site_name %in% unique(detection_matrix$deer$site_name)) ##filter those for relevant for the analysis
-
+  dplyr::filter(site_name %in% unique(detection_matrix$deer$site_name))%>% ##filter those for relevant for the analysis
+  mutate(total_freq_humans = ifelse(is.na(total_freq_humans), 0, total_freq_humans)) %>%
+  mutate(total_freq_dogs = ifelse(is.na(total_freq_dogs), 0, total_freq_dogs))
 
 b2000 <- read_csv(urlfile2000)%>%
   mutate(site_name = gsub("_", "", site_name))%>%
   mutate(site_name = gsub("TUW0", "TUW", site_name))
 b2000 <- left_join(b2000, human_dog_df, by="site_name")%>%
-  dplyr::filter(site_name %in% unique(detection_matrix$deer$site_name)) ##filter those for relevant for the analysis
-
+  dplyr::filter(site_name %in% unique(detection_matrix$deer$site_name))%>% ##filter those for relevant for the analysis
+  mutate(total_freq_humans = ifelse(is.na(total_freq_humans), 0, total_freq_humans)) %>%
+  mutate(total_freq_dogs = ifelse(is.na(total_freq_dogs), 0, total_freq_dogs))
 
 ##call occupancy covariates
+b100<- b100 %>% select(-1, -BUFF_DIST, -SHAPE_Length, -ORIG_FID, -SHAPE_Area)
+b500<- b500 %>% select(-1, -BUFF_DIST, -SHAPE_Length, -ORIG_FID, -SHAPE_Area)
 b1000<- b1000 %>% select(-1, -BUFF_DIST, -SHAPE_Length, -ORIG_FID, -SHAPE_Area)
+b2000<- b2000 %>% select(-1, -BUFF_DIST, -SHAPE_Length, -ORIG_FID, -SHAPE_Area)
 
+#ignoring cam 37 for now
+b100 <- b100[-15,]
+b500 <- b500[-15,]
+b1000 <- b1000[-15,]
+b2000 <- b2000[-15,]
 
 ##call detection covariate matrix here if using
 ##det_list <- list(season = det_covs)
 
 # setting up for occupancy for deer
-y <- detection_matrix$deer[ , 2:54]
+y <- detection_matrix$deer[-15 , 2:54]
+
+siteCovs_100 <- as.data.frame(b100)
+siteCovs_100 <- siteCovs_100[,1:23]
 
 siteCovs_500 <- as.data.frame(b500)
-siteCovs_500 <- siteCovs_500[,2:23]
+siteCovs_500 <- siteCovs_500[,1:23]
 
 siteCovs_1000 <- as.data.frame(b1000)
-siteCovs_1000 <- siteCovs_500[,2:23]
+siteCovs_1000 <- siteCovs_1000[,1:23]
 
 siteCovs_2000 <- as.data.frame(b2000)
-siteCovs_2000 <- siteCovs_500[,2:23]
+siteCovs_2000 <- siteCovs_2000[,1:23]
 
+umf_deer_100 <- unmarkedFrameOccu(y = y, siteCovs = siteCovs_100)
 umf_deer_500 <- unmarkedFrameOccu(y = y, siteCovs = siteCovs_500)
 umf_deer_1000 <- unmarkedFrameOccu(y = y, siteCovs = siteCovs_1000)
 umf_deer_2000 <- unmarkedFrameOccu(y = y, siteCovs = siteCovs_2000)
 
 ##SINGLE SPECES
-y_list_c <- list(coyote = as.matrix(detection_matrix$coyote %>% select(-1)))
-coyote <- unmarkedFrameOccu(y = (detection_matrix$coyote%>%select(-1)),
-                            siteCovs = cov)
+# y_list_c <- list(coyote = as.matrix(detection_matrix$coyote %>% select(-1)))
+# coyote <- unmarkedFrameOccu(y = (detection_matrix$coyote%>%select(-1)),
+#                             siteCovs = cov)
 #obsCovs = det_list
 #mdata <- coyote
 ## in order to change deer model with buffer change swap mdata variable with umf_deer_500, umf_deer_1000, or umf_deer_2000
-mdata <- umf_deer_1000
+mdata <- umf_deer_100
 
 
 ##single covariate comparison
 
 fit_null <- occu(formula = ~ 1
                  ~ 1,
-                 data = mdata)
-
-
-fit_null <- occu(formula = ~1
-                      ~1,
                  data = mdata)
 
 fit_LFT <- occu(formula = ~1
@@ -111,9 +131,9 @@ fit_built <- occu(formula = ~1
                   data = mdata)
 
 fit_DEM_median <- occu(formula = ~1
-                            ~DEM_median,
-                            
-                            data = mdata)
+                  ~DEM_median,
+                  
+                  data = mdata)
 
 fit_DEM_mean <- occu(formula = ~1
                           ~DEM_mean,
@@ -234,13 +254,18 @@ lines(lower ~ WVF_PA, occ.prob.wvf_pa, type="l", col=gray(0.5))
 lines(upper ~ WVF_PA, occ.prob.wvf_pa, type="l", col=gray(0.5))
 
 ###notes for interpretation
-## at 1000 buffer, built was the best model , however not under 2 AIC score from null, just 0.62
 
-## for the 500 and 1000 buffer with deer, the best models were WVF Dist, DEM Median, DEM Mean, NDVI Mean, and NDVI Median
-## in that order with AIC values all within at most 1.6 difference
+## for the 100 buffer with deer, the best models were DEM Median, DEM Mean
+## in that order with AIC values all within at most 1.98 difference
 
-## for 2000 buffer with deer, the best models were NDVI Mean, NDVI Median and WVF PA
-## in that order with AIC values all within at most 0.58 difference
+## for the 500 buffer with deer, the best models were DEM Median, DEM Mean, NDVI Median and NDVI Median
+## in that order with AIC values all within at most 1.98 difference
+
+## for the 1000 buffer with deer, the best models were DEM Median, DEM Mean
+## in that order with AIC values all within at most 1.28 difference
+
+## for 2000 buffer with deer, the best models were DEM Mean, DEM Median, FD PA, NDVI Mean
+## in that order with AIC values all within at most 1.998 difference
 
 ## for the plots of the deer occupancy, the x-axis of the plots will be needed to changed according to the range
 ## of the covariates
